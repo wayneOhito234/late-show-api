@@ -1,8 +1,19 @@
 # server/testing/conftest.py
 
+import os
+import sys
 import pytest
-from server.app import app, db
-from server.models import Episode, Guest, Appearance
+
+# Ensure project root is on sys.path so "server" can be imported
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))      # server/testing
+SERVER_DIR = os.path.dirname(CURRENT_DIR)                     # server
+ROOT_DIR = os.path.dirname(SERVER_DIR)                        # project root
+
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+
+from server.app import app
+from server.models import db, Episode, Guest, Appearance
 
 
 @pytest.fixture
@@ -25,6 +36,10 @@ def client(test_app):
 
 @pytest.fixture
 def sample_data(test_app):
+    """
+    Create sample episodes, guests, appearances for API tests.
+    Return ONLY IDs to avoid DetachedInstanceError (no detached models).
+    """
     with test_app.app_context():
         ep1 = Episode(date="1/11/99", number=1)
         ep2 = Episode(date="1/12/99", number=2)
@@ -41,4 +56,11 @@ def sample_data(test_app):
         db.session.add_all([a1, a2])
         db.session.commit()
 
-        return {"ep1": ep1, "ep2": ep2, "g1": g1, "g2": g2, "g3": g3}
+        # Return only primitive data (IDs), not model instances
+        return {
+            "ep1_id": ep1.id,
+            "ep2_id": ep2.id,
+            "g1_id": g1.id,
+            "g2_id": g2.id,
+            "g3_id": g3.id,
+        }

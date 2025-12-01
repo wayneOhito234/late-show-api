@@ -16,29 +16,32 @@ def test_get_episodes(client, sample_data):
 
 
 def test_get_episode_by_id_success(client, sample_data):
-    ep1 = sample_data["ep1"]
-    resp = client.get(f"/episodes/{ep1.id}")
+    ep1_id = sample_data["ep1_id"]
+
+    resp = client.get(f"/episodes/{ep1_id}")
     assert resp.status_code == 200
     data = resp.get_json()
-    assert data["id"] == ep1.id
+    assert data["id"] == ep1_id
     assert "appearances" in data
+    assert isinstance(data["appearances"], list)
 
 
 def test_get_episode_by_id_not_found(client):
-    resp = client.get("/episodes/999")
+    resp = client.get("/episodes/9999")
     assert resp.status_code == 404
     assert resp.get_json() == {"error": "Episode not found"}
 
 
 def test_delete_episode_success(client, sample_data):
-    ep1 = sample_data["ep1"]
-    resp = client.delete(f"/episodes/{ep1.id}")
+    ep1_id = sample_data["ep1_id"]
+
+    resp = client.delete(f"/episodes/{ep1_id}")
     assert resp.status_code == 204
-    assert resp.data == b""
+    assert resp.data == b""  # empty body
 
 
 def test_delete_episode_not_found(client):
-    resp = client.delete("/episodes/999")
+    resp = client.delete("/episodes/9999")
     assert resp.status_code == 404
     assert resp.get_json() == {"error": "Episode not found"}
 
@@ -53,27 +56,38 @@ def test_get_guests(client, sample_data):
 
 
 def test_post_appearance_success(client, sample_data):
-    ep2 = sample_data["ep2"]
-    g3 = sample_data["g3"]
+    ep2_id = sample_data["ep2_id"]
+    g3_id = sample_data["g3_id"]
 
     resp = client.post(
         "/appearances",
-        json={"rating": 5, "episode_id": ep2.id, "guest_id": g3.id},
+        json={"rating": 5, "episode_id": ep2_id, "guest_id": g3_id},
     )
     assert resp.status_code == 201
     data = resp.get_json()
     assert data["rating"] == 5
-    assert data["episode"]["id"] == ep2.id
-    assert data["guest"]["id"] == g3.id
+    assert data["episode"]["id"] == ep2_id
+    assert data["guest"]["id"] == g3_id
 
 
-def test_post_appearance_validation_error(client, sample_data):
-    ep2 = sample_data["ep2"]
-    g3 = sample_data["g3"]
+def test_post_appearance_validation_error_bad_rating(client, sample_data):
+    ep2_id = sample_data["ep2_id"]
+    g3_id = sample_data["g3_id"]
 
     resp = client.post(
         "/appearances",
-        json={"rating": 10, "episode_id": ep2.id, "guest_id": g3.id},
+        json={"rating": 10, "episode_id": ep2_id, "guest_id": g3_id},
+    )
+    assert resp.status_code == 400
+    data = resp.get_json()
+    assert "errors" in data
+
+
+def test_post_appearance_validation_error_missing_fields(client):
+    # missing guest_id
+    resp = client.post(
+        "/appearances",
+        json={"rating": 3, "episode_id": 1},
     )
     assert resp.status_code == 400
     data = resp.get_json()
