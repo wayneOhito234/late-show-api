@@ -26,3 +26,17 @@ python -m server.seed
 ```bash
 python -m server.app
 ```
+## 5 . API endpoints
+Episodes
+GET /episodes
+DELETE /episodes/<id>
+Guests
+GET /guests
+Appearances
+POST /appearances
+
+## 6. Running Tests
+Make sure your virtual environment is active, then:
+```bash
+pytest -x
+```
